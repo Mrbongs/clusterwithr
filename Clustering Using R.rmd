@@ -1,0 +1,157 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+The [R plugin](https://www.jetbrains.com/help/pycharm/r-plugin-support.html) for IntelliJ-based IDEs provides
+handy capabilities to work with the [R Markdown](https://www.jetbrains.com/help/pycharm/r-markdown.html) files.
+To [add](https://www.jetbrains.com/help/pycharm/r-markdown.html#add-code-chunk) a new R chunk,
+position the caret at any line or the code chunk, then click "+".
+
+The code chunk appears:
+```{r, message = FALSE}
+# Load packages
+library('ggplot2') # visualization
+library('ggthemes') # visualization
+library('scales') # visualization
+library('dplyr') # data manipulation
+library('mice') # imputation
+library('randomForest') # classification algorithm
+
+# Load packages for clustering
+library('cluster')     # Basic functions for cluster analysis
+library('factoextra')  # Visualization of cluster analysis results
+library('fpc')         # Flexible procedures for clustering
+library('dbscan')      # Density-Based Spatial Clustering of Applications with Noise
+library('NbClust')     # Determining the Best Number of Clusters in a Data Set
+```
+
+Type any R code in the chunk, for example:
+```{r, message=FALSE, warning=FALSE}
+cluster <- read.csv('D:\\R CODING\\CLUSTERING PROJECT 1\\segmentation data.csv', stringsAsFactors = FALSE)
+# check data
+str(cluster)
+```
+```{r}
+# Mengecek duplikasi data
+duplicated_rows <- duplicated(cluster)
+duplicated_data <- cluster[duplicated_rows, ]
+
+# Menampilkan jumlah baris duplikat
+if (any(duplicated_rows)) {
+  cat("Jumlah baris duplikat:", sum(duplicated_rows), "\n")
+} else {
+  cat("Tidak ada baris duplikat dalam dataset.\n")
+}
+
+# Mengecek nilai yang hilang
+missing_values <- is.na(cluster)
+missing_values_count <- colSums(missing_values)
+
+# Menampilkan jumlah nilai yang hilang per kolom
+if (any(missing_values_count > 0)) {
+  cat("Jumlah nilai yang hilang per kolom:\n")
+  print(missing_values_count[missing_values_count > 0])
+} else {
+  cat("Tidak ada nilai yang hilang dalam dataset.\n")
+}
+```
+```{r}
+colnames(cluster)
+
+# Pemilihan kolom
+datacluster <- cluster[, c("Sex", "Marital.status", "Age", "Education", "Income", "Occupation", "Settlement.size")]
+
+# Clustering menggunakan algoritma K-means
+set.seed(123) # Untuk reproduktibilitas
+kmeans_model <- kmeans(datacluster, centers = 5) # Ubah jumlah cluster sesuai kebutuhan
+
+# Menambahkan label cluster ke dataset
+cluster$Cluster <- kmeans_model$cluster
+
+# Menampilkan hasil clustering
+print(table(cluster$Cluster))
+
+# Evaluasi clustering
+print(cluster::silhouette(kmeans_model$cluster, dist(datacluster)))
+```
+```{r}
+# Memuat library yang diperlukan
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(broom)
+library(RColorBrewer)
+# Mereduksi dimensi menggunakan PCA
+pca_result <- prcomp(datacluster, scale. = TRUE)
+
+# Mengambil dua komponen utama
+pca_data <- as.data.frame(pca_result$x[, 1:2])
+
+# Menambahkan label cluster
+pca_data$Cluster <- kmeans_model$cluster
+
+# Plot scatter PCA
+ggplot(pca_data, aes(x = PC1, y = PC2, color = factor(Cluster))) +
+        geom_point() +
+        labs(x = "Principal Component 1", y = "Principal Component 2", color = "Cluster") +
+        theme_minimal()
+```
+```{r}
+# Menggabungkan variabel "Sex" dan "Marital Status" ke dalam data PCA
+pca_data <- cbind(pca_data, datacluster[, c("Sex", "Marital.status")])
+
+# Visualisasi distribusi cluster berdasarkan variabel "Sex" dan "Marital Status"
+ggplot(pca_data, aes(x = Sex, fill = factor(Cluster))) +
+        geom_bar(position = "dodge") +
+        facet_wrap(~Marital.status)
+```
+```{r}
+# Menggabungkan variabel "Income" ke dalam data PCA
+pca_data2 <- cbind(pca_data, datacluster["Income"])
+
+# Visualisasi distribusi cluster berdasarkan variabel "Age" dan "Income"
+ggplot(pca_data2, aes(x = Marital.status, fill = factor(Cluster))) +
+        geom_bar(position = "dodge") +
+        facet_wrap(~Income)
+```
+```{r}
+# Menggabungkan variabel "Income" ke dalam data PCA
+pca_data3 <- cbind(pca_data, datacluster["Age"])
+
+# Visualisasi distribusi cluster berdasarkan variabel "Age" dan "Income"
+ggplot(pca_data3, aes(x = Age, fill = factor(Cluster))) +
+        geom_bar(position = "dodge") +
+        facet_wrap(~Sex)
+```
+```{r}
+# Menggabungkan variabel "Income" ke dalam data PCA
+pca_data4 <- cbind(pca_data3, datacluster["Income"])
+
+# Visualisasi distribusi cluster berdasarkan variabel "Age" dan "Income"
+ggplot(pca_data4, aes(x = Income, fill = factor(Cluster))) +
+  geom_bar(position = "dodge") +
+  facet_wrap(~Age)
+```
+```{r}
+# Menggabungkan variabel "Income" ke dalam data PCA
+pca_data5 <- cbind(pca_data4, datacluster["Occupation"])
+
+# Visualisasi distribusi cluster berdasarkan variabel "Age" dan "Income"
+ggplot(pca_data5, aes(x = Income, fill = factor(Cluster))) +
+geom_bar(position = "dodge") +
+facet_wrap(~Occupation)
+```
+```{r}
+# Menggabungkan variabel "Income" ke dalam data PCA
+pca_data6 <- cbind(pca_data5, datacluster["Settlement.size"])
+
+# Visualisasi distribusi cluster berdasarkan variabel "Age" dan "Income"
+ggplot(pca_data4, aes(x = Income, fill = factor(Cluster))) +
+geom_bar(position = "dodge") +
+facet_wrap(~Marital.status)
+```
+
+Now, click the **Run** button on the chunk toolbar to [execute](https://www.jetbrains.com/help/pycharm/r-markdown.html#run-r-code) the chunk code. The result should be placed under the chunk.
+Click the **Knit and Open Document** to build and preview an output.
